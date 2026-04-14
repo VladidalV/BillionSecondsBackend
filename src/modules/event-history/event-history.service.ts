@@ -30,14 +30,14 @@ export class EventHistoryService {
       record = this.repo.create({ userId, profileId });
     }
 
-    // Idempotent: only set if currently null
-    if (dto.first_shown_at !== undefined && record.firstShownAt === null) {
+    // Idempotent: only set if currently null/undefined
+    if (dto.first_shown_at !== undefined && record.firstShownAt == null) {
       record.firstShownAt = dto.first_shown_at ? new Date(dto.first_shown_at) : null;
     }
-    if (dto.celebration_shown_at !== undefined && record.celebrationShownAt === null) {
+    if (dto.celebration_shown_at !== undefined && record.celebrationShownAt == null) {
       record.celebrationShownAt = dto.celebration_shown_at ? new Date(dto.celebration_shown_at) : null;
     }
-    if (dto.share_prompt_shown_at !== undefined && record.sharePromptShownAt === null) {
+    if (dto.share_prompt_shown_at !== undefined && record.sharePromptShownAt == null) {
       record.sharePromptShownAt = dto.share_prompt_shown_at ? new Date(dto.share_prompt_shown_at) : null;
     }
 

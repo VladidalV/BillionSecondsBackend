@@ -4,8 +4,6 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
-  IsMax,
-  IsMin,
   IsNotEmpty,
   IsOptional,
   IsString,

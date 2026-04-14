@@ -242,7 +242,7 @@ export class AuthService {
     const tokenHash = await bcrypt.hash(refreshToken, 10);
     const expiresAt = new Date();
     // Parse "30d" → days
-    const match = refreshExpiresIn.match(/^(\d+)d$/);
+    const match = (refreshExpiresIn ?? '30d').match(/^(\d+)d$/);
     if (match) expiresAt.setDate(expiresAt.getDate() + parseInt(match[1]));
     else expiresAt.setDate(expiresAt.getDate() + 30);
 
