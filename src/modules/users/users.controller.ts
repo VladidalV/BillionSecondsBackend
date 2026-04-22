@@ -22,6 +22,11 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get('me')
+  getMe(@CurrentUser() user: User) {
+    return this.usersService.getMe(user.id);
+  }
+
   @Put('me/device')
   @HttpCode(HttpStatus.NO_CONTENT)
   updateDevice(@CurrentUser() user: User, @Body() dto: UpdateDeviceDto) {

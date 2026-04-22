@@ -19,6 +19,9 @@ export interface AuthTokens {
   access_token: string;
   refresh_token: string;
   user_id: string;
+  email: string | null;
+  display_name: string | null;
+  provider: string;
 }
 
 @Injectable()
@@ -167,7 +170,7 @@ export class AuthService {
       .execute();
   }
 
-  async mergeAccounts(anonymousToken: string, providerToken: string): Promise<AuthTokens> {
+  async mergeAccounts(anonymousToken: string, providerToken: string, provider: 'google' | 'apple'): Promise<AuthTokens> {
     // Verify anonymous token
     let anonPayload: any;
     try {
@@ -187,19 +190,45 @@ export class AuthService {
       });
     }
 
-    // Verify provider token (Google for now — Apple handled separately)
-    let providerTicket: any;
-    try {
-      providerTicket = await this.googleClient.verifyIdToken({ idToken: providerToken });
-    } catch {
-      throw new BadRequestException({
-        error: { code: 'INVALID_PROVIDER_TOKEN', message: 'Invalid provider token', field: 'provider_token' },
-      });
+    let providerId: string;
+    let providerEmail: string | null = null;
+    let providerDisplayName: string | null = null;
+    let authProvider: AuthProvider;
+
+    if (provider === 'apple') {
+      let applePayload: any;
+      try {
+        const appleSignIn = require('apple-signin-auth');
+        applePayload = await appleSignIn.verifyIdToken(providerToken, {
+          audience: this.configService.get('apple.clientId'),
+          ignoreExpiration: false,
+        });
+      } catch {
+        throw new BadRequestException({
+          error: { code: 'INVALID_PROVIDER_TOKEN', message: 'Invalid Apple identity token', field: 'provider_token' },
+        });
+      }
+      providerId = applePayload.sub;
+      providerEmail = applePayload.email ?? null;
+      authProvider = AuthProvider.APPLE;
+    } else {
+      let providerTicket: any;
+      try {
+        providerTicket = await this.googleClient.verifyIdToken({ idToken: providerToken });
+      } catch {
+        throw new BadRequestException({
+          error: { code: 'INVALID_PROVIDER_TOKEN', message: 'Invalid Google ID token', field: 'provider_token' },
+        });
+      }
+      const gpayload = providerTicket.getPayload();
+      providerId = gpayload.sub;
+      providerEmail = gpayload.email ?? null;
+      providerDisplayName = gpayload.name ?? null;
+      authProvider = AuthProvider.GOOGLE;
     }
 
-    const gpayload = providerTicket.getPayload();
     const existingProvider = await this.usersRepo.findOne({
-      where: { authProvider: AuthProvider.GOOGLE, authProviderId: gpayload.sub },
+      where: { authProvider, authProviderId: providerId },
     });
 
     if (existingProvider) {
@@ -209,10 +238,10 @@ export class AuthService {
     }
 
     // Upgrade anonymous account
-    anonUser.authProvider = AuthProvider.GOOGLE;
-    anonUser.authProviderId = gpayload.sub;
-    anonUser.email = gpayload.email || null;
-    anonUser.displayName = gpayload.name || null;
+    anonUser.authProvider = authProvider;
+    anonUser.authProviderId = providerId;
+    anonUser.email = providerEmail;
+    anonUser.displayName = providerDisplayName || anonUser.displayName;
     anonUser.anonymousId = null;
     await this.usersRepo.save(anonUser);
 
@@ -250,6 +279,13 @@ export class AuthService {
       this.tokensRepo.create({ id: jti, userId: user.id, tokenHash, expiresAt }),
     );
 
-    return { access_token: accessToken, refresh_token: refreshToken, user_id: user.id };
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      user_id: user.id,
+      email: user.email,
+      display_name: user.displayName,
+      provider: user.authProvider,
+    };
   }
 }

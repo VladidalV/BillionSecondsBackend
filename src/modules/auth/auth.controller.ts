@@ -52,6 +52,6 @@ export class AuthController {
   @Post('merge')
   @UseGuards(JwtAuthGuard)
   mergeAccounts(@Body() dto: MergeAccountDto) {
-    return this.authService.mergeAccounts(dto.anonymous_token, dto.provider_token);
+    return this.authService.mergeAccounts(dto.anonymous_token, dto.provider_token, dto.provider);
   }
 }

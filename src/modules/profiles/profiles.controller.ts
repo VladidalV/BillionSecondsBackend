@@ -34,6 +34,14 @@ export class ProfilesController {
     return this.profilesService.create(user.id, dto);
   }
 
+  // NOTE: literal routes must be declared BEFORE parameterised ones so NestJS
+  // does not swallow "active" as an :id value.
+  @Put('profiles/active')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  setActive(@CurrentUser() user: User, @Body() dto: SetActiveProfileDto) {
+    return this.profilesService.setActive(user.id, dto.profile_id);
+  }
+
   @Put('profiles/:id')
   update(
     @CurrentUser() user: User,
@@ -47,11 +55,5 @@ export class ProfilesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@CurrentUser() user: User, @Param('id', ParseUUIDPipe) id: string) {
     return this.profilesService.remove(user.id, id);
-  }
-
-  @Put('profiles/active')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  setActive(@CurrentUser() user: User, @Body() dto: SetActiveProfileDto) {
-    return this.profilesService.setActive(user.id, dto.profile_id);
   }
 }

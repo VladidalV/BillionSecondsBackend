@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Repository } from 'typeorm';
-import { User } from '../../entities/user.entity';
+import { User, AuthProvider } from '../../entities/user.entity';
 import { Profile } from '../../entities/profile.entity';
 import { UserSettings } from '../../entities/user-settings.entity';
 import { EventHistory } from '../../entities/event-history.entity';
@@ -25,6 +25,18 @@ export class UsersService {
     private readonly dataSource: DataSource,
     private readonly syncService: SyncService,
   ) {}
+
+  async getMe(userId: string) {
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException();
+    return {
+      user_id: user.id,
+      email: user.email,
+      display_name: user.displayName,
+      provider: user.authProvider,
+      is_anonymous: user.authProvider === AuthProvider.ANONYMOUS,
+    };
+  }
 
   async updateDevice(userId: string, dto: UpdateDeviceDto): Promise<void> {
     await this.usersRepo.update(userId, {

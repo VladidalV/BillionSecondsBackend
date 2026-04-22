@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsIn } from 'class-validator';
 
 export class MergeAccountDto {
   @IsString()
@@ -8,4 +8,9 @@ export class MergeAccountDto {
   @IsString()
   @IsNotEmpty()
   provider_token: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsIn(['google', 'apple'])
+  provider: 'google' | 'apple';
 }
